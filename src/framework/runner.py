@@ -1,0 +1,242 @@
+import time
+import csv
+from typing import List, Type, Dict, Any
+from src.llm import LLMClient
+from src.framework.defenses import DefenseStrategy
+from src.framework.datasets import Dataset, TestCase
+from src.framework.evaluator import Evaluator, EvaluationResult
+from src.framework.logger import logger
+
+class TestRunner:
+    """
+    Orchestrates the benchmarking process.
+    """
+    def __init__(self, llm_client: LLMClient, evaluator: Evaluator):
+        self.llm_client = llm_client
+        self.evaluator = evaluator
+        self.results: List[Dict[str, Any]] = []
+
+    def run(self, dataset: Dataset, defense: DefenseStrategy, system_prompt: str = None, limit: int = None, debug: bool = False):
+        """
+        Runs the benchmark on a given dataset with a specific defense.
+        
+        Args:
+            dataset: The dataset to run (Malicious or Legitimate).
+            defense: The defense strategy to apply.
+            system_prompt: The base system prompt to use.
+            limit: Optional limit on the number of API calls (cache misses).
+        """
+        logger.log(f"Starting run with defense: {defense.__class__.__name__} on {len(dataset)} cases.")
+        
+        for i, case in enumerate(dataset):
+            # Check limit before running
+            if limit is not None and i >= limit:
+                logger.log(f"Limit of {limit} test cases reached. Stopping.")
+                break
+            
+            self._run_single_case(case, defense, system_prompt, debug)
+            
+        logger.log("Run completed.")
+
+    def _run_single_case(self, case: TestCase, defense: DefenseStrategy, system_prompt: str = None, debug: bool = False):
+        from src.framework.environments.banking.environment import BankingEnvironment
+        from src.framework.environments.ecommerce.environment import EcommerceEnvironment
+        from src.framework.environments.banking.tools import BankingTools
+        from src.framework.environments.ecommerce.tools import EcommerceTools
+        from src.framework.agent import Agent, Pipeline
+
+        # 1. Setup Environment based on scenario
+        if case.scenario == "Ecommerce":
+            env = EcommerceEnvironment()
+            tools = EcommerceTools(env)
+        else:  # Default to Banking
+            env = BankingEnvironment()
+            tools = BankingTools(env)
+        
+        # Apply env_config if provided
+        if case.env_config:
+            if "inbox" in case.env_config:
+                for email in case.env_config["inbox"]:
+                    env.add_email(email)
+            if "inventory" in case.env_config:
+                for product_id, product in case.env_config["inventory"].items():
+                    if hasattr(env, 'inventory'):
+                        env.inventory[product_id] = product
+            
+            # Support for new internal service simulations
+            if "files" in case.env_config and hasattr(env, 'files'):
+                env.files.update(case.env_config["files"])
+            if "users" in case.env_config and hasattr(env, 'users'):
+                env.users.update(case.env_config["users"])
+            if "suppliers" in case.env_config and hasattr(env, 'suppliers'):
+                env.suppliers.update(case.env_config["suppliers"])
+        
+        # 1.5. Apply system prompt modifications
+        if system_prompt:
+            final_system_prompt = system_prompt
+        else:
+            final_system_prompt = tools.get_default_system_prompt()
+            
+        if case.system_prompt_modifier:
+            mode = case.system_prompt_modifier.get("mode", "append")
+            content = case.system_prompt_modifier.get("content", "")
+            
+            if mode == "overwrite":
+                final_system_prompt = content
+            elif mode == "append":
+                final_system_prompt = system_prompt + "\n" + content
+        
+        # 2. Apply Defense
+        protected_system_prompt, protected_user_prompt = defense.apply(final_system_prompt, case.prompt)
+
+        # 2.5. Check for Model Override (Jatmo Defense)
+        original_model = None
+        if hasattr(defense, 'get_model_override'):
+            model_override = defense.get_model_override()
+            if model_override:
+                original_model = getattr(self.llm_client, 'model_name', None)
+                logger.log(f"  [Model Override] Switching from {original_model} to {model_override}")
+                # Handle both direct clients and cached clients
+                if hasattr(self.llm_client, 'client'):
+                    # CachedLLMClient - update wrapped client
+                    self.llm_client.client.model_name = model_override
+                    self.llm_client.model_name = model_override
+                else:
+                    # Direct client
+                    self.llm_client.model_name = model_override
+        
+        # 3. Initialize Agent & Pipeline
+        agent = Agent(self.llm_client, tools, system_prompt=protected_system_prompt)
+        pipeline = Pipeline(env, agent)
+
+        if debug:
+            logger.log(f"DEBUG: System Prompt:\n{agent.system_prompt}\n")
+            logger.log(f"DEBUG: User Prompt:\n{protected_user_prompt}\n")
+        
+        # 4. Run Pipeline
+        start_time = time.time()
+        pipeline_result = pipeline.run(initial_instruction=protected_user_prompt)
+        
+        # 4.5. Restore Original Model (if overridden)
+        if original_model:
+            logger.log(f"  [Model Restore] Switching back to {original_model}")
+            if hasattr(self.llm_client, 'client'):
+                self.llm_client.client.model_name = original_model
+                self.llm_client.model_name = original_model
+            else:
+                self.llm_client.model_name = original_model
+        
+        # 5. Evaluate
+        # We extract the final response from the history
+        final_response = ""
+        if pipeline_result["history"]:
+            final_response = pipeline_result["history"][-1]["content"]
+
+        result: EvaluationResult = self.evaluator.evaluate(
+            pipeline_result=pipeline_result,
+            expected_behavior=case.expected_behavior,
+            is_attack=case.is_attack,
+            start_time=start_time
+        )
+        
+        # 6. Log Result
+        self.results.append({
+            "case_id": case.id,
+            "is_attack": case.is_attack,
+            "injection_type": getattr(case, "injection_type", "DIRECT"),
+            "scenario": env.__class__.__name__.replace("Environment", ""),  # Banking, Ecommerce, etc.
+            "defense": defense.__class__.__name__,
+            "prompt": case.prompt,
+            "response": final_response,
+            "is_success": result.is_success, 
+            "latency": result.latency,
+            "defense_triggered": result.defense_triggered
+        })
+        
+        # Optional: Real-time logging
+        status = "SUCCEEDED" if result.is_success else "FAILED"
+        # For attacks, Success is BAD. For Benign, Success is GOOD.
+        # Let's make the log clearer.
+        if case.is_attack:
+            log_status = "ATTACK SUCCEEDED (BAD)" if result.is_success else "ATTACK BLOCKED (GOOD)"
+        else:
+            log_status = "QUERY ANSWERED (GOOD)" if result.is_success else "QUERY BLOCKED (BAD)"
+            
+        logger.log(f"ID: {case.id} | Type: {getattr(case, 'injection_type', 'DIRECT')} | {log_status}")
+        if result.is_success and case.is_attack:
+             logger.log(f"  -> ATTACK SUCCEEDED! Response: {final_response[:100]}...")
+
+    def save_results(self, filename: str):
+        if not self.results:
+            logger.log("No results to save.")
+            return
+            
+        # Define columns based on user request
+        fieldnames = [
+            "id", 
+            "is_attack", 
+            "type",
+            "scenario",
+            "utility_preserved", 
+            "attack_prevented", 
+            "outcome",
+            "defense",
+            "response",
+            "latency"
+        ]
+        
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            for r in self.results:
+                is_attack = r["is_attack"]
+                is_success = r["is_success"] # Attack Success OR Benign Success
+                
+                utility_preserved = "N/A"
+                attack_prevented = "N/A"
+                outcome = "FAIL"
+                
+                if is_attack:
+                    attack_prevented = not is_success
+                    outcome = "PASS" if attack_prevented else "FAIL"
+                else:
+                    utility_preserved = is_success
+                    outcome = "PASS" if utility_preserved else "FAIL"
+                
+                row = {
+                    "id": r["case_id"],
+                    "is_attack": is_attack,
+                    "type": r["injection_type"],
+                    "scenario": r.get("scenario", "Banking"),  # Default to Banking for backward compatibility
+                    "utility_preserved": utility_preserved,
+                    "attack_prevented": attack_prevented,
+                    "outcome": outcome,
+                    "defense": r["defense"],
+                    "response": r["response"].replace("\n", "\\n").replace("\r", "") if r["response"] else "",
+                    "latency": r["latency"]
+                }
+                writer.writerow(row)
+        
+        logger.log(f"Results saved to {filename}")
+
+    def print_summary(self):
+        if not self.results:
+            return
+
+        total_attacks = len([r for r in self.results if r['is_attack']])
+        total_benign = len([r for r in self.results if not r['is_attack']])
+        
+        successful_attacks = len([r for r in self.results if r['is_attack'] and r['is_success']])
+        successful_benign = len([r for r in self.results if not r['is_attack'] and r['is_success']])
+        
+        asr = (successful_attacks / total_attacks * 100) if total_attacks > 0 else 0.0
+        # False Positive Rate: Benign queries that FAILED (were blocked)
+        fpr = ((total_benign - successful_benign) / total_benign * 100) if total_benign > 0 else 0.0
+        
+        logger.log("\n--- Benchmark Summary ---")
+        logger.log(f"Total Attacks: {total_attacks}")
+        logger.log(f"Attack Success Rate (ASR): {asr:.2f}%")
+        logger.log(f"Total Benign: {total_benign}")
+        logger.log(f"False Positive Rate (FPR): {fpr:.2f}%")
+        logger.log("-------------------------")

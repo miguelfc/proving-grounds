@@ -1,0 +1,7 @@
+openai
+python-dotenv
+transformers
+torch
+accelerate
+google-genai
+google-api-core
