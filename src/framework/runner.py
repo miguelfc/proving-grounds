@@ -136,7 +136,8 @@ class TestRunner:
             pipeline_result=pipeline_result,
             expected_behavior=case.expected_behavior,
             is_attack=case.is_attack,
-            start_time=start_time
+            start_time=start_time,
+            eval_criteria=getattr(case, "eval_criteria", {})
         )
         
         # 6. Log Result

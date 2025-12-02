@@ -27,20 +27,60 @@ from src.framework.defenses import (
     InstructionalDefense, 
     XMLTaggingDefense,
     SignedPromptDefense,
+    CompositeDefense,
 )
+
+def create_defense(name: str):
+    name = name.lower().strip()
+    if name == "no_defense":
+        return NoDefense()
+    elif name == "sandwich":
+        return SandwichDefense()
+    elif name == "instructional":
+        return InstructionalDefense()
+    elif name == "xml_tagging":
+        return XMLTaggingDefense()
+    elif name == "signed_prompt":
+        return SignedPromptDefense()
+    else:
+        print(f"Warning: Unknown defense '{name}'")
+        return None
 
 def get_defenses(defense_names: List[str]):
     defenses = []
-    if "all" in defense_names or "no_defense" in defense_names:
-        defenses.append(NoDefense())
-    if "all" in defense_names or "sandwich" in defense_names:
-        defenses.append(SandwichDefense())
-    if "all" in defense_names or "instructional" in defense_names:
-        defenses.append(InstructionalDefense())
-    if "all" in defense_names or "xml_tagging" in defense_names:
-        defenses.append(XMLTaggingDefense())
-    if "all" in defense_names or "signed_prompt" in defense_names:
-        defenses.append(SignedPromptDefense())
+    
+    # Flatten list (handle commas)
+    flat_names = []
+    for d in defense_names:
+        flat_names.extend(d.split(','))
+        
+    for name in flat_names:
+        name = name.strip()
+        if not name:
+            continue
+            
+        if name == "all":
+            defenses.extend([
+                NoDefense(), SandwichDefense(), InstructionalDefense(), 
+                XMLTaggingDefense(), SignedPromptDefense()
+            ])
+            continue
+            
+        if "+" in name:
+            # Composite Defense
+            sub_names = name.split('+')
+            sub_defenses = []
+            for sub in sub_names:
+                d = create_defense(sub)
+                if d:
+                    sub_defenses.append(d)
+            if sub_defenses:
+                defenses.append(CompositeDefense(sub_defenses))
+        else:
+            # Single Defense
+            d = create_defense(name)
+            if d:
+                defenses.append(d)
     
     return defenses
 
@@ -118,13 +158,15 @@ def run_benchmark(dataset_path: str, models: List[str], defense_names: List[str]
                 logger.log("Stopping execution as requested.")
                 
                 # Save partial results
-                result_file = os.path.join(output_dir, f"results_{provider}_{model_name}_{defense_name}_PARTIAL.csv")
+                dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
+                result_file = os.path.join(output_dir, f"results_{dataset_name}_{provider}_{model_name}_{defense_name}_PARTIAL.csv")
                 runner.save_results(result_file)
                 
                 sys.exit(1)
             
             # Save Results
-            result_file = os.path.join(output_dir, f"results_{provider}_{model_name}_{defense_name}.csv")
+            dataset_name = os.path.splitext(os.path.basename(dataset_path))[0]
+            result_file = os.path.join(output_dir, f"results_{dataset_name}_{provider}_{model_name}_{defense_name}.csv")
             runner.save_results(result_file)
             runner.print_summary()
 
@@ -132,7 +174,7 @@ def run_benchmark(dataset_path: str, models: List[str], defense_names: List[str]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Prompt Injection Benchmark")
-    parser.add_argument("--dataset", type=str, default="data/generated_dataset.json", help="Path to dataset file")
+    parser.add_argument("--dataset", type=str, default="data/attack_dataset.json", help="Path to dataset file")
     parser.add_argument("--models", type=str, nargs="+", default=["gemini:gemini-2.5-flash-lite"], 
                         help="List of models in format provider:model_name (e.g. gemini:gemini-2.5-flash-lite openai:gpt-3.5-turbo)")
     parser.add_argument("--defenses", type=str, nargs="+", default=["all"], 

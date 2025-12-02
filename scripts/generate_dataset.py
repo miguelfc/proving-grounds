@@ -30,9 +30,37 @@ def generate_dataset():
     attack_methods = load_yaml(ATTACK_METHODS_FILE)
     injection_locations = load_yaml(INJECTION_LOCATIONS_FILE)
 
-    test_cases = []
+    # --- Generate Legitimate Dataset ---
+    print("Generating legitimate test cases...")
+    legit_test_cases = []
+    for task in user_tasks:
+        case_id = f"{task['id']}_legit"
+        test_case = {
+            "id": case_id,
+            "prompt": task["prompt"],
+            "is_attack": False,
+            "expected_behavior": "Should fulfill the user request.",
+            "injection_type": "NONE",
+            "scenario": task["scenario"],
+            "env_config": {},
+            "metadata": {
+                "user_task": task["id"]
+            },
+            "eval_criteria": task.get("eval_criteria", {})
+        }
+        legit_test_cases.append(test_case)
 
-    print("Generating test cases...")
+    print(f"Generated {len(legit_test_cases)} legitimate test cases.")
+    
+    LEGIT_OUTPUT_FILE = "data/legitimate_dataset.json"
+    with open(LEGIT_OUTPUT_FILE, 'w') as f:
+        json.dump(legit_test_cases, f, indent=2)
+    print(f"Legitimate dataset saved to {LEGIT_OUTPUT_FILE}")
+
+    # --- Generate Attack Dataset ---
+    print("Generating attack test cases...")
+    attack_test_cases = []
+    seen_direct_attacks = set()
     
     for task in user_tasks:
         scenario = task["scenario"]
@@ -50,13 +78,22 @@ def generate_dataset():
                 continue
 
             for goal in attacker_goals:
-                # Filter compatible methods
-                compatible_methods_ids = goal.get("compatible_methods", [])
-                
+                # Filter by scenario
+                if goal.get("scenario") and goal["scenario"] != scenario:
+                    continue
+
                 for method in attack_methods:
-                    # Skip if method is not compatible (if compatibility list is present)
-                    if compatible_methods_ids and method["id"] not in compatible_methods_ids:
+                    # Filter method by scenario
+                    if method.get("scenario") and method["scenario"] != scenario:
                         continue
+
+                    
+                    # --- Optimization: Deduplicate Direct Attacks ---
+                    if location["type"] == "direct":
+                        unique_key = (location["id"], goal["id"], method["id"])
+                        if unique_key in seen_direct_attacks:
+                            continue
+                        seen_direct_attacks.add(unique_key)
                         
                     # 1. Check Context
                     method_context = method.get("context", {})
@@ -120,7 +157,11 @@ def generate_dataset():
                         injection_type = "DIRECT"
                     
                     # 4. Create Test Case
-                    case_id = f"{task['id']}_{location['id']}_{goal['id']}_{method['id']}"
+                    if location["type"] == "direct":
+                         # Use a generic ID for direct attacks since they are task-independent
+                         case_id = f"{location['id']}_{goal['id']}_{method['id']}"
+                    else:
+                         case_id = f"{task['id']}_{location['id']}_{goal['id']}_{method['id']}"
                     
                     test_case = {
                         "id": case_id,
@@ -131,24 +172,20 @@ def generate_dataset():
                         "scenario": scenario,
                         "env_config": env_config,
                         "metadata": {
-                            "user_task": task["id"],
-                            "attacker_goal": goal["id"],
-                            "attack_method": method["id"],
                             "injection_location": location["id"]
-                        }
+                        },
+                        "eval_criteria": goal.get("eval_criteria", {})
                     }
                     
-                    test_cases.append(test_case)
+                    attack_test_cases.append(test_case)
 
-    print(f"Generated {len(test_cases)} test cases.")
+    print(f"Generated {len(attack_test_cases)} attack test cases.")
     
-    # Ensure output directory exists
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+    ATTACK_OUTPUT_FILE = "data/attack_dataset.json"
+    with open(ATTACK_OUTPUT_FILE, 'w') as f:
+        json.dump(attack_test_cases, f, indent=2)
     
-    with open(OUTPUT_FILE, 'w') as f:
-        json.dump(test_cases, f, indent=2)
-    
-    print(f"Dataset saved to {OUTPUT_FILE}")
+    print(f"Attack dataset saved to {ATTACK_OUTPUT_FILE}")
 
 if __name__ == "__main__":
     generate_dataset()
