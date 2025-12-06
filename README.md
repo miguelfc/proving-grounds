@@ -4,7 +4,7 @@ Proving Grounds is a modular Python-based framework designed to evaluate the rob
 
 It uses a **Unified Agent Simulation** approach, where every test case (whether a direct prompt or an indirect injection via email/reviews) is executed by an Agent in a persistent environment. This allows for realistic verification of attacks, measuring success not just by text output but by **state changes** (e.g., unauthorized money transfers, data exfiltration).
 
-## 📚 Documentation Map
+## Documentation Map
 
 The documentation is organized by use case. Start here to find the guide you need:
 
