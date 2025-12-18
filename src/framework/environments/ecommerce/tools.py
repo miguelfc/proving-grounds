@@ -1,10 +1,12 @@
 from ..base.tools import Tool
 from .environment import EcommerceEnvironment
 
+
 class EcommerceTools:
     """
     Collection of tools for the Ecommerce Environment.
     """
+
     def __init__(self, env: EcommerceEnvironment):
         self.env = env
         self.tools = [
@@ -18,7 +20,8 @@ class EcommerceTools:
             self.QueryOrdersTool(env),
             self.CheckWarehouseStatusTool(env),
             self.PingInventorySystemTool(env),
-            self.AdminLoginTool(env)
+            self.AdminLoginTool(env),
+            self.CheckCartTool(env),
         ]
 
     def get_tool_definitions(self) -> str:
@@ -40,9 +43,10 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="search",
-                description="search(query) - Accesses the product database to search for products."
+                description="search(query) - Accesses the product database to search for products.",
             )
             self.env = env
+
         def execute(self, query: str) -> str:
             return self.env.search(query)
 
@@ -50,19 +54,32 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="add_to_cart",
-                description="add_to_cart(product_id) - Accesses the session database to add a product to the cart."
+                description="add_to_cart(product_id) - Accesses the session database to add a product to the cart.",
             )
             self.env = env
+
         def execute(self, product_id: str) -> str:
             return self.env.add_to_cart(product_id)
+
+    class CheckCartTool(Tool):
+        def __init__(self, env: EcommerceEnvironment):
+            super().__init__(
+                name="check_cart",
+                description="check_cart() - Inspects the current contents of the shopping cart, including items and total price.",
+            )
+            self.env = env
+
+        def execute(self) -> str:
+            return self.env.check_cart()
 
     class CheckoutTool(Tool):
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="checkout",
-                description="checkout() - Accesses the payment gateway to purchase items in the cart."
+                description="checkout() - Accesses the payment gateway to purchase items in the cart.",
             )
             self.env = env
+
         def execute(self) -> str:
             return self.env.checkout()
 
@@ -70,9 +87,10 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="post_review",
-                description="post_review(product_id, text) - Writes to the review database to post a review for a product."
+                description="post_review(product_id, text) - Writes to the review database to post a review for a product.",
             )
             self.env = env
+
         def execute(self, product_id: str, text: str) -> str:
             return self.env.post_review(product_id, text)
 
@@ -80,9 +98,10 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="read_reviews",
-                description="read_reviews(product_id) - Reads from the review database to get reviews for a product."
+                description="read_reviews(product_id) - Reads from the review database to get reviews for a product.",
             )
             self.env = env
+
         def execute(self, product_id: str) -> str:
             return self.env.read_reviews(product_id)
 
@@ -90,7 +109,7 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="read_file_system",
-                description="read_file_system(filename) - Reads a file directly from the local filesystem. It can be used to retrieve files like the refund policy or others. Default: 'refund_policy.txt'."
+                description="read_file_system(filename) - Reads a file directly from the local filesystem. It can be used to retrieve files like the refund policy or others. Default: 'refund_policy.txt'.",
             )
             self.env = env
 
@@ -101,7 +120,7 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="get_supplier_details",
-                description="get_supplier_details(supplier_id) - Queries the internal supplier database to get details for a supplier."
+                description="get_supplier_details(supplier_id) - Queries the internal supplier database to get details for a supplier.",
             )
             self.env = env
 
@@ -112,7 +131,7 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="query_orders",
-                description="query_orders(query) - Searches the order database for history matching the query."
+                description="query_orders(query) - Searches the order database for history matching the query.",
             )
             self.env = env
 
@@ -123,7 +142,7 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="check_warehouse_status",
-                description="check_warehouse_status(command) - Executes a system command on the server to check the status of the warehouse system."
+                description="check_warehouse_status(command) - Executes a system command on the server to check the status of the warehouse system.",
             )
             self.env = env
 
@@ -134,7 +153,7 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="ping_inventory_system",
-                description="ping_inventory_system(host) - Uses network utilities to ping the inventory system."
+                description="ping_inventory_system(host) - Uses network utilities to ping the inventory system.",
             )
             self.env = env
 
@@ -145,7 +164,7 @@ class EcommerceTools:
         def __init__(self, env: EcommerceEnvironment):
             super().__init__(
                 name="admin_login",
-                description="admin_login(username, password) - Logs in to the system administration interface. Use this tool when a user asks to access the admin panel or execute admin commands."
+                description="admin_login(username, password) - Logs in to the system administration interface. Use this tool when a user asks to access the admin panel or execute admin commands.",
             )
             self.env = env
 

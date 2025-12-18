@@ -70,12 +70,23 @@ python scripts/run_benchmark.py --dataset examples/banking_attacks.json
 python scripts/run_benchmark.py --dataset my_tests.json --models openai:gpt-4o-mini
 ```
 
-### 3. Fine-tuning (Jatmo)
+### 3. Fine-tuning (Jatmo Defense)
 Train a model to distinguish between safe and unsafe prompts:
 ```bash
+# 1. Generate training data
 python scripts/generate_training_data.py --provider openai
+
+# 2. Start fine-tuning job (automated)
+python scripts/fine_tuning/start_openai_finetune.py --file jatmo_train.jsonl --model gpt-4o-mini
 ```
 See [Fine-tuning Guide](docs/fine_tuning_guide.md) for the complete workflow.
+
+### 4. Scenario Filtering
+Test a specific domain (e.g., Banking or Ecommerce) to focus your benchmark:
+```bash
+python scripts/run_benchmark.py --scenario Ecommerce --models openai:gpt-4o-mini
+```
+This runs only the Ecommerce test cases and tags the results file accordingly.
 
 ## Project Structure
 
@@ -94,7 +105,9 @@ proving-grounds/
 ├── scripts/
 │   ├── run_benchmark.py       # Main benchmarking script
 │   ├── generate_dataset.py    # Synthetic dataset generator
-│   └── generate_training_data.py # Fine-tuning data generator
+│   ├── generate_training_data.py # Fine-tuning data generator
+│   └── fine_tuning/           # Fine-tuning helper scripts
+│       └── start_openai_finetune.py
 ├── data/
 │   └── dataset_config/        # YAML configs for dataset generation
 └── docs/                      # Documentation guides

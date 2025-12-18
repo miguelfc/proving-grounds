@@ -67,14 +67,14 @@ This will:
 3.  For each task, iterate through compatible Injection Locations.
 4.  For each location, iterate through every Attacker Goal and Attack Method.
 5.  Generate a test case for each combination.
-6.  Save the result to `data/generated_dataset.json`.
+6.  Save the result to `data/attack_dataset.json`.
 
 ## Using the Dataset
 
 You can run the generated dataset using the batch runner:
 
 ```bash
-python run_batch_tests.py data/generated_dataset.json
+python scripts/run_benchmark.py --dataset data/attack_dataset.json
 ```
 
 Or load it programmatically:
@@ -82,6 +82,6 @@ Or load it programmatically:
 ```python
 from src.framework.datasets import JSONDataset
 
-dataset = JSONDataset("data/generated_dataset.json")
+dataset = JSONDataset("data/attack_dataset.json")
 # ... run tests ...
 ```

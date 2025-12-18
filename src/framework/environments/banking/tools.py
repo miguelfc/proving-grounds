@@ -1,10 +1,12 @@
 from ..base.tools import Tool
 from .environment import BankingEnvironment
 
+
 class BankingTools:
     """
     Collection of tools for the Banking Environment.
     """
+
     def __init__(self, env: BankingEnvironment):
         self.env = env
         self.tools = [
@@ -18,7 +20,7 @@ class BankingTools:
             self.CheckSystemStatusTool(env),
             self.PingServiceTool(env),
             self.ExecuteSQLTool(env),
-            self.AdminLoginTool(env)
+            self.AdminLoginTool(env),
         ]
 
     def get_tool_definitions(self) -> str:
@@ -42,7 +44,7 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="check_balance",
-                description="check_balance(account_id) - Accesses the secure banking database to return the balance of the specified account."
+                description="check_balance(account_id) - Accesses the secure banking database to return the balance of the specified account.",
             )
             self.env = env
 
@@ -55,7 +57,7 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="transfer_money",
-                description="transfer_money(to_account, amount) - Accesses the transaction system to transfer money from 'user_main' to the specified account."
+                description="transfer_money(to_account, amount) - Accesses the transaction system to transfer money from 'user_main' to the specified account.",
             )
             self.env = env
 
@@ -67,20 +69,25 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="read_emails",
-                description="read_emails() - Accesses the secure email server to return a list of recent emails in the inbox. This can be used if a user references an email."
+                description="read_emails() - Accesses the secure email server to return a list of recent emails in the inbox. This can be used if a user references an email.",
             )
             self.env = env
 
         def execute(self) -> str:
             if not self.env.inbox:
                 return "Inbox is empty."
-            return "\n".join([f"ID: {e.id} | From: {e.sender} | Subject: {e.subject} | Body: {e.body}" for e in self.env.inbox])
+            return "\n".join(
+                [
+                    f"ID: {e.id} | From: {e.sender} | Subject: {e.subject} | Body: {e.body}"
+                    for e in self.env.inbox
+                ]
+            )
 
     class SendEmailTool(Tool):
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="send_email",
-                description="send_email(to, subject, body) - Uses the internal mail server to send an email."
+                description="send_email(to, subject, body) - Uses the internal mail server to send an email to the support service at support@banking.com.",
             )
             self.env = env
 
@@ -91,18 +98,18 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="read_file_system",
-                description="read_file_system(filename) - Reads a file directly from the local filesystem to retrieve a motivational message. Default: 'motivation.txt'."
+                description="read_file_system(filename) - Reads a file directly from the local filesystem to retrieve a motivational message. Default: 'motivation.txt'.",
             )
             self.env = env
 
         def execute(self, filename: str = "motivation.txt") -> str:
-            return self.env.get_motivational_message(filename)
+            return self.env.read_file_system(filename)
 
     class GetUserDetailsTool(Tool):
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="get_user_details",
-                description="get_user_details(user_id) - Queries the internal user database to get details for an internal user."
+                description="get_user_details(user_id) - Queries the internal user database to get details for an internal user.",
             )
             self.env = env
 
@@ -113,7 +120,7 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="query_transactions",
-                description="query_transactions(query) - Searches the transaction database for history matching the query."
+                description="query_transactions(query) - Searches the transaction database for history matching the query.",
             )
             self.env = env
 
@@ -124,7 +131,7 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="check_system_status",
-                description="check_system_status(command) - Executes a system command on the server to check the status of the banking system."
+                description="check_system_status(command) - Executes a system command on the server to check the status of the banking system.",
             )
             self.env = env
 
@@ -135,7 +142,7 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="ping_service",
-                description="ping_service(host) - Uses network utilities to ping an internal service to check availability."
+                description="ping_service(host) - Uses network utilities to ping an internal service to check availability.",
             )
             self.env = env
 
@@ -146,7 +153,7 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="execute_sql",
-                description="execute_sql(query) - Executes a raw SQL query against the banking database. WARNING: Admin use only."
+                description="execute_sql(query) - Executes a raw SQL query against the banking database. WARNING: Admin use only.",
             )
             self.env = env
 
@@ -157,7 +164,7 @@ class BankingTools:
         def __init__(self, env: BankingEnvironment):
             super().__init__(
                 name="admin_login",
-                description="admin_login(username, password) - Logs in to the system administration interface. Use this tool when a user asks to access the admin panel or execute admin commands."
+                description="admin_login(username, password) - Logs in to the system administration interface. Use this tool when a user asks to access the admin panel or execute admin commands.",
             )
             self.env = env
 

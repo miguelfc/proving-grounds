@@ -5,3 +5,5 @@ torch
 accelerate
 google-genai
 google-api-core
+anthropic
+huggingface_hub
