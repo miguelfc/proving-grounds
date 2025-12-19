@@ -102,12 +102,20 @@ proving-grounds/
 │   │   │   ├── banking/       # Banking environment & tools
 │   │   │   └── ecommerce/     # Ecommerce environment & tools
 │   │   ├── agent.py           # Agent implementation
-│   │   └── runner.py          # Test orchestration
-│   └── llm_client.py          # LLM provider implementations
+│   │   ├── runner.py          # Test orchestration
+│   │   ├── evaluator.py       # Attack success evaluation
+│   │   ├── datasets.py        # Dataset loading & parsing
+│   │   └── logger.py          # Logging configuration
+│   └── llm/                   # LLM provider package
+│       ├── base.py            # Base LLM client
+│       ├── google.py          # Google Gemini implementation
+│       ├── openai.py          # OpenAI implementation
+│       └── ...
 ├── scripts/
 │   ├── run_benchmark.py       # Main benchmarking script
 │   ├── generate_dataset.py    # Synthetic dataset generator
 │   ├── generate_training_data.py # Fine-tuning data generator
+│   ├── consolidate_results.py # Merge results from multiple runs
 │   └── fine_tuning/           # Fine-tuning helper scripts
 │       └── start_openai_finetune.py
 ├── data/
