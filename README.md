@@ -35,7 +35,7 @@ The documentation is organized by use case. Start here to find the guide you nee
     ```bash
     python scripts/run_benchmark.py
     ```
-    This runs the default test suite using Gemini 1.5 Flash.
+    This runs the default test suite using Gemini 2.5 Flash Lite.
 
 ## Key Features
 

@@ -15,7 +15,7 @@ Use the `scripts/run_benchmark.py` script to execute tests.
 
 ### Basic Usage
 
-Run with default settings (Gemini 1.5 Flash, all defenses, generated dataset):
+Run with default settings (Gemini 2.5 Flash Lite, all defenses, generated dataset):
 
 ```bash
 python scripts/run_benchmark.py
@@ -28,7 +28,7 @@ You can test multiple models from different providers. Format: `provider:model_n
 Supported providers: `gemini`, `openai`, `local`.
 
 ```bash
-python scripts/run_benchmark.py --models gemini:gemini-1.5-flash openai:gpt-3.5-turbo
+python scripts/run_benchmark.py --models gemini:gemini-2.5-flash-lite openai:gpt-3.5-turbo
 ```
 
 ### Specifying Defenses
@@ -128,7 +128,7 @@ Each CSV contains:
 
 2.  **Run Benchmark**:
     ```bash
-    python scripts/run_benchmark.py --models gemini:gemini-1.5-flash --defenses all
+    python scripts/run_benchmark.py --models gemini:gemini-2.5-flash-lite --defenses all
     ```
 
 3.  **Review Summary**:

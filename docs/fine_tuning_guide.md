@@ -83,7 +83,7 @@ python scripts/generate_training_data.py --provider gemini --output gemini_train
 1. Go to [Google AI Studio](https://aistudio.google.com/) or Google Cloud Console.
 2. Look for **Tuned Models** or **Vertex AI Fine-tuning**.
 3. Create a new tuning job and upload your `gemini_training.jsonl`.
-4. Select a base model (e.g., `gemini-1.5-flash`).
+4. Select a base model (e.g., `gemini-2.5-flash-lite`).
 
 ### Step 3: Use Fine-tuned Model
 
