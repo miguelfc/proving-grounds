@@ -23,10 +23,12 @@ The documentation is organized by use case. Start here to find the guide you nee
     ```
 
 2.  **Set up API Keys**:
-    Create a `.env` file:
+    Create a `.env` file (see `.env.example` for details):
     ```bash
-    GEMINI_API_KEY=your_key
     OPENAI_API_KEY=your_key
+    GEMINI_API_KEY=your_key
+    ANTHROPIC_API_KEY=your_key
+    HUGGINGFACE_API_KEY=your_key
     ```
 
 3.  **Run the Benchmark**:
