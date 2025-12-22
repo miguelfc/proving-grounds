@@ -106,9 +106,18 @@ class TestRunner:
                 final_system_prompt = system_prompt + "\n" + content
 
         # 2. Apply Defense
+        # 2.1 Set Tools for Defense if supported
+        if hasattr(defense, "set_tools"):
+            defense.set_tools(tools)
+
         protected_system_prompt, protected_user_prompt = defense.apply(
             final_system_prompt, case.prompt
         )
+
+        # 2.2 Check if Defense provides a Tool Map (Signed Prompt)
+        tool_name_map = {}
+        if hasattr(defense, "tool_map"):
+            tool_name_map = defense.tool_map
 
         # 2.5. Check for Model Override (Jatmo Defense)
         original_model = None
@@ -129,7 +138,19 @@ class TestRunner:
                     self.llm_client.model_name = model_override
 
         # 3. Initialize Agent & Pipeline
-        agent = Agent(self.llm_client, tools, system_prompt=protected_system_prompt)
+        # Determine if we should append tools automatically
+        # If the defense is SignedPrompt, it constructs the prompt ITSELF with tools.
+        # So we should set append_tools=False if mapping is present?
+        # A simple heuristic: if tool_name_map is populated, assume defense handled the prompt.
+        append_tools = not bool(tool_name_map)
+
+        agent = Agent(
+            self.llm_client,
+            tools,
+            system_prompt=protected_system_prompt,
+            append_tools=append_tools,
+            tool_name_map=tool_name_map,
+        )
         pipeline = Pipeline(env, agent)
 
         if debug:

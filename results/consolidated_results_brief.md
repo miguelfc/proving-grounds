@@ -71,16 +71,16 @@
 
 # Benchmark Summary
 
-- **Date**: 2025-12-17
+- **Date**: 2025-12-22
 - **Total Cases**: 172
 - **Total Attacks**: 132
 - **Total Benign**: 40
 
 ## Metrics
-- **Logical Attack Success Rate (ASR)**: 74.24%
-- **Logical False Positive Rate (FPR)**: 35.00%
-- **LaaJ Attack Success Rate (ASR)**: 0.76%
-- **LaaJ False Positive Rate (FPR)**: 27.50%
+- **Logical Attack Success Rate (ASR)**: 62.88%
+- **Logical False Positive Rate (FPR)**: 95.00%
+- **LaaJ Attack Success Rate (ASR)**: 0.00%
+- **LaaJ False Positive Rate (FPR)**: 17.50%
 
 
 
@@ -176,16 +176,16 @@
 
 # Benchmark Summary
 
-- **Date**: 2025-12-17
+- **Date**: 2025-12-22
 - **Total Cases**: 172
 - **Total Attacks**: 132
 - **Total Benign**: 40
 
 ## Metrics
-- **Logical Attack Success Rate (ASR)**: 76.52%
-- **Logical False Positive Rate (FPR)**: 7.50%
-- **LaaJ Attack Success Rate (ASR)**: 73.48%
-- **LaaJ False Positive Rate (FPR)**: 5.00%
+- **Logical Attack Success Rate (ASR)**: 59.85%
+- **Logical False Positive Rate (FPR)**: 95.00%
+- **LaaJ Attack Success Rate (ASR)**: 59.09%
+- **LaaJ False Positive Rate (FPR)**: 10.00%
 
 
 
@@ -281,16 +281,16 @@
 
 # Benchmark Summary
 
-- **Date**: 2025-12-17
+- **Date**: 2025-12-22
 - **Total Cases**: 172
 - **Total Attacks**: 132
 - **Total Benign**: 40
 
 ## Metrics
-- **Logical Attack Success Rate (ASR)**: 94.70%
-- **Logical False Positive Rate (FPR)**: 10.00%
-- **LaaJ Attack Success Rate (ASR)**: 87.88%
-- **LaaJ False Positive Rate (FPR)**: 12.50%
+- **Logical Attack Success Rate (ASR)**: 81.06%
+- **Logical False Positive Rate (FPR)**: 95.00%
+- **LaaJ Attack Success Rate (ASR)**: 59.85%
+- **LaaJ False Positive Rate (FPR)**: 22.50%
 
 
 
@@ -407,15 +407,15 @@
 
 # Benchmark Summary
 
-- **Date**: 2025-12-17
+- **Date**: 2025-12-22
 - **Total Cases**: 101
 - **Total Attacks**: 82
 - **Total Benign**: 19
 
 ## Metrics
-- **Logical Attack Success Rate (ASR)**: 67.07%
-- **Logical False Positive Rate (FPR)**: 5.26%
-- **LaaJ Attack Success Rate (ASR)**: 31.71%
+- **Logical Attack Success Rate (ASR)**: 60.98%
+- **Logical False Positive Rate (FPR)**: 100.00%
+- **LaaJ Attack Success Rate (ASR)**: 29.27%
 - **LaaJ False Positive Rate (FPR)**: 5.26%
 
 
@@ -512,16 +512,16 @@
 
 # Benchmark Summary
 
-- **Date**: 2025-12-17
+- **Date**: 2025-12-22
 - **Total Cases**: 172
 - **Total Attacks**: 132
 - **Total Benign**: 40
 
 ## Metrics
-- **Logical Attack Success Rate (ASR)**: 66.67%
-- **Logical False Positive Rate (FPR)**: 12.50%
-- **LaaJ Attack Success Rate (ASR)**: 31.82%
-- **LaaJ False Positive Rate (FPR)**: 10.00%
+- **Logical Attack Success Rate (ASR)**: 68.18%
+- **Logical False Positive Rate (FPR)**: 100.00%
+- **LaaJ Attack Success Rate (ASR)**: 29.55%
+- **LaaJ False Positive Rate (FPR)**: 22.50%
 
 
 

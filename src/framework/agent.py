@@ -10,7 +10,9 @@ class Agent:
     Wraps an LLMClient and manages the interaction with the environment.
     """
 
-    def __init__(self, client: LLMClient, tools: Any, system_prompt: str = None):
+    def __init__(
+        self, client: LLMClient, tools: Any, system_prompt: str = None, **kwargs
+    ):
         self.client = client
         self.tools = tools
 
@@ -22,20 +24,62 @@ class Agent:
             else:
                 base_prompt = "You are a helpful Assistant."
 
-        self.system_prompt = self._construct_full_prompt(base_prompt)
+        self.system_prompt = self._construct_full_prompt(
+            base_prompt, append_tools=kwargs.get("append_tools", True)
+        )
         self.chat_history = []
+        self.tool_name_map = kwargs.get("tool_name_map", {})
 
-    def _construct_full_prompt(self, base_prompt: str) -> str:
-        return f"""{base_prompt}
-
+    def _construct_full_prompt(
+        self, base_prompt: str, append_tools: bool = True
+    ) -> str:
+        prompt = f"{base_prompt}\n"
+        if append_tools:
+            prompt += f"""
 You have access to the following tools:
 {self.tools.get_tool_definitions()}
 
 To use a tool, output the function call in the format: `TOOL_CALL: function_name(arguments)`
 Example: `TOOL_CALL: check_balance(account_id='user_main')`
-
+"""
+        prompt += """
 If you don't need to use a tool, just answer the user directly.
 """
+        return prompt
+
+    def execute_tool(self, tool_name: str, args: dict) -> str:
+        """
+        Executes a tool, verifying the signature mapping if one exists.
+        """
+        # 1. Reverse Lookup if map is present (Signature -> Real Name)
+        real_name = tool_name
+        if self.tool_name_map:
+            # Check if the tool_name provided is actually a signature
+            # We need to find the key (real_name) where value == tool_name
+            # Or simpler: the tool_name_map could be Signature -> Real Name?
+            # Let's assume tool_name_map is Real Name -> Signature for generation
+            # So here we need to reverse it.
+            # OPTIMIZATION: In a real app, we'd pre-calculate the reverse map.
+
+            # Case 1: The model called the Signature
+            found = False
+            for r_name, signature in self.tool_name_map.items():
+                if signature == tool_name:
+                    real_name = r_name
+                    found = True
+                    break
+
+            # Case 2: The model called the Real Name (Potential Attack if signatures are enforced)
+            # If signatures are enforced, we should potentially BLOCK this.
+            # But the agent logic is "try to execute".
+            # The Defense strategy might handle the enforcement, or we do it here.
+            # For this simplified implementation, we will just proceed.
+            # If the user input contained the real name, and the model outputted it,
+            # we execute it unless blocking is handled elsewhere.
+            # ideally, the system prompt says "only use signatures".
+            pass
+
+        return self.tools.execute(real_name, args)
 
     def step(self, observation: str) -> Tuple[str, float]:
         """
@@ -131,7 +175,7 @@ class Pipeline:
 
             if tool_call:
                 # Execute Tool
-                tool_output = self.agent.tools.execute(
+                tool_output = self.agent.execute_tool(
                     tool_call["name"], tool_call["args"]
                 )
                 print(f'  -> Tool Output: "{tool_output}"')
@@ -167,7 +211,8 @@ class Pipeline:
 
             # Parse name and args
             # Regex to capture name and content inside parentheses
-            match = re.match(r"(\w+)\((.*)\)", cmd_str)
+            # Updated to support # in signatures for Signed Prompt Defense
+            match = re.match(r"([\w#]+)\((.*)\)", cmd_str)
             if match:
                 name = match.group(1)
                 args_str = match.group(2)
